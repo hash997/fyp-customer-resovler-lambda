@@ -1,0 +1,10 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "customerResolverStack"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-1rm337rch45b7"
+s3_prefix = "customerResolverStack"
+region = "ap-southeast-1"
+capabilities = "CAPABILITY_IAM"
+image_repositories = []

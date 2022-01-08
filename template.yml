@@ -1,0 +1,32 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Customer Resolver For GraphQL
+# Globals:
+#   Function:
+#     Timeout: 30
+
+Resources:
+  CustomerResolverLamdba:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: CustomerResolver
+      Runtime: go1.x
+      CodeUri: ./customerResolver
+      VpcConfig:
+        SecurityGroupIds:
+          - sg-081b3e2c080c7010f
+        SubnetIds:
+          - subnet-040f248df60874c61
+          - subnet-0b1b2fae22836e45d
+          - subnet-05ba6ea5390b23f25
+      Policies:
+        # - !ImportValue SecretManagerPolicyForJDPLambdasARN
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - rds-db:connect
+              Resource: arn:aws:rds:ap-southeast-1:466971186549:db:database-1
+      Environment:
+        Variables:
+          END_POINT: database-1.cdqfiq1lbrhl.ap-southeast-1.rds.amazonaws.com
