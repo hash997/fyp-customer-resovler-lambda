@@ -7,6 +7,6 @@ runtime = "go1.x"
 source_md5 = ""
 architecture = "x86_64"
 packagetype = "Zip"
-functions = ["CustomerResolverLamdba"]
+functions = ["CustomersResolverLamdba"]
 
 [layer_build_definitions]

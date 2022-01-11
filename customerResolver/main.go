@@ -53,11 +53,18 @@ type CreateCustomerArguments struct {
 	CreateCustomerInput GqlCreateCustomerInput `json:"createCustomerInput"`
 }
 
-func (*CustomerHandler) CustomerQueryHandler(req *Request) (GqlCustomer, error) {
-	var gqlCstmr GqlCustomer
-	var dbCstmr Customer
+type UpdateCustomerArguments struct {
+	UpateCustomerInput UpdateCustomerInput `json:"updateCustomerInput"`
+}
+type DeleteCustomerArguments struct {
+	Id uuid.UUID `json:"id"`
+}
 
-	args := CustomerByIdArguments{}
+func (c *CustomerHandler) CreateCustomer(req *Request) (GqlCustomer, error) {
+	var gqlCstmr GqlCustomer
+	// var dbAdm autoMatesOrm.Customer
+
+	args := CreateCustomerArguments{}
 	argsByts, err := json.Marshal(req.Arguments)
 	if err != nil {
 		return gqlCstmr, err
@@ -67,8 +74,7 @@ func (*CustomerHandler) CustomerQueryHandler(req *Request) (GqlCustomer, error) 
 		return gqlCstmr, err
 	}
 
-	// // if your type have any left joins check gorm.io for query with eager loading, or preload
-	err = DB.First(&dbCstmr, "customer_id = ?", args.CustomerId).Error
+	dbCstmr, err := InsertCustomerToDB(&args)
 	if err != nil {
 		return gqlCstmr, err
 	}
@@ -81,8 +87,7 @@ func (*CustomerHandler) CustomerQueryHandler(req *Request) (GqlCustomer, error) 
 	return gqlCstmr, nil
 }
 
-//CreateCustomer Handles  type Mutation  field createCustomer
-func (c *CustomerHandler) CreateCustomer(req *Request) (GqlCustomer, error) {
+func (c *CustomerHandler) UpdateCustomer(req *Request) (GqlCustomer, error) {
 	var gqlCstmr GqlCustomer
 	// var dbAdm autoMatesOrm.Customer
 
@@ -115,6 +120,85 @@ func (c *CustomerHandler) CreateCustomer(req *Request) (GqlCustomer, error) {
 	return gqlCstmr, nil
 }
 
+func (c *CustomerHandler) DeleteCustomer(req *Request) (GqlCustomer, error) {
+	var gqlCstmr GqlCustomer
+	var dbCstmr Customer
+
+	args := DeleteCustomerArguments{}
+	argsByts, err := json.Marshal(req.Arguments)
+	if err != nil {
+		return gqlCstmr, err
+	}
+	err = json.Unmarshal(argsByts, &args)
+	if err != nil {
+		return gqlCstmr, err
+	}
+
+	err = DB.Where("customer_id = ?", args.Id).Delete(&dbCstmr).Error
+	if err != nil {
+		return gqlCstmr, err
+	}
+
+	return gqlCstmr, nil
+}
+
+func (c *CustomerHandler) CustomerMuationHandler(req *Request) (GqlCustomer, error) {
+	gqlCstmr := GqlCustomer{}
+	var err error
+
+	switch req.Info.FieldName {
+	case "createCustomer":
+		gqlCstmr, err = c.CreateCustomer(req)
+		if err != nil {
+			return gqlCstmr, err
+		}
+	case "updateCustomer":
+		gqlCstmr, err = c.UpdateCustomer(req)
+		if err != nil {
+			return gqlCstmr, err
+		}
+	case "deleteCustomer":
+		gqlCstmr, err = c.DeleteCustomer(req)
+		if err != nil {
+			return gqlCstmr, err
+		}
+	default:
+		errMessage := fmt.Sprintf("handler error: field name %v is unkown", req.Info.FieldName)
+		err = errors.New(errMessage)
+		return gqlCstmr, err
+	}
+
+	return gqlCstmr, nil
+
+}
+
+func (c *CustomerHandler) CustomerQueryHandler(req *Request) (GqlCustomer, error) {
+	var gqlCstmr GqlCustomer
+	var dbCstmr Customer
+
+	args := CustomerByIdArguments{}
+	argsByts, err := json.Marshal(req.Arguments)
+	if err != nil {
+		return gqlCstmr, err
+	}
+	err = json.Unmarshal(argsByts, &args)
+	if err != nil {
+		return gqlCstmr, err
+	}
+
+	err = DB.First(&dbCstmr, "customer_id = ?", args.CustomerId).Error
+	if err != nil {
+		return gqlCstmr, err
+	}
+
+	gqlCstmr, err = ConvertDBCustomerToGqlCustomer(dbCstmr)
+	if err != nil {
+		return gqlCstmr, err
+	}
+
+	return gqlCstmr, nil
+}
+
 func (c *CustomerHandler) CustomerResolver(ctx context.Context, req Request) (*GqlCustomer, error) {
 
 	cstmr := GqlCustomer{}
@@ -127,7 +211,7 @@ func (c *CustomerHandler) CustomerResolver(ctx context.Context, req Request) (*G
 			return nil, err
 		}
 	case "Mutation":
-		cstmr, err = c.CreateCustomer(&req)
+		cstmr, err = c.CustomerMuationHandler(&req)
 		if err != nil {
 			return nil, err
 		}

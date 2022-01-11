@@ -1,15 +1,41 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
-Description: Customer Resolver For GraphQL
+Description: Customers Resolver For GraphQL
 # Globals:
 #   Function:
 #     Timeout: 30
 
 Resources:
-  CustomerResolverLamdba:
+  AppsyncCustomersResolversLambdaServiceRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "appsync.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+  CustomersResolversLambdaAccessPolicy:
+    Type: "AWS::IAM::Policy"
+    Properties:
+      PolicyName: "DirectAppSyncLambda"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Action: "lambda:invokeFunction"
+            Resource:
+              - !GetAtt CustomersResolverLamdba.Arn
+      Roles:
+        - Ref: "AppsyncCustomersResolversLambdaServiceRole"
+  CustomersResolverLamdba:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: CustomerResolver
+      Handler: CustomersResolver
       Runtime: go1.x
       CodeUri: ./customerResolver
       VpcConfig:
@@ -20,7 +46,6 @@ Resources:
           - subnet-0b1b2fae22836e45d
           - subnet-05ba6ea5390b23f25
       Policies:
-        # - !ImportValue SecretManagerPolicyForJDPLambdasARN
         - Version: "2012-10-17"
           Statement:
             - Effect: Allow
@@ -30,3 +55,65 @@ Resources:
       Environment:
         Variables:
           END_POINT: database-1.cdqfiq1lbrhl.ap-southeast-1.rds.amazonaws.com
+  CustomersDataSource:
+    Type: "AWS::AppSync::DataSource"
+    Properties:
+      ApiId: 
+        Fn::ImportValue:
+         FinalYearProjectAPIId
+      Description: "Responsible for resolving all mutations and subscribtions with return type customers interfaec and types that implement User interface"
+      Name: "CustomersDataSource"
+      Type: "AWS_LAMBDA"
+      ServiceRoleArn: !GetAtt AppsyncCustomersResolversLambdaServiceRole.Arn
+      LambdaConfig: 
+        LambdaFunctionArn: !GetAtt CustomersResolverLamdba.Arn  
+  QueryCustomerByIdResolver:
+    Type: "AWS::AppSync::Resolver"
+    Properties:
+      ApiId: 
+        Fn::ImportValue:
+          FinalYearProjectAPIId
+      TypeName: "Query"
+      FieldName: "customerById"
+      DataSourceName: !GetAtt CustomersDataSource.Name
+  MutationCreateCustomerResolver:
+    Type: "AWS::AppSync::Resolver"
+    Properties:
+      ApiId: 
+        Fn::ImportValue:
+          FinalYearProjectAPIId
+      TypeName: "Mutation"
+      FieldName: "createCustomer"
+      DataSourceName: !GetAtt CustomersDataSource.Name
+  MutationUpdateCustomerResolver:
+    Type: "AWS::AppSync::Resolver"
+    Properties:
+      ApiId: 
+        Fn::ImportValue:
+          FinalYearProjectAPIId
+      TypeName: "Mutation"
+      FieldName: "updateCustomer"
+      DataSourceName: !GetAtt CustomersDataSource.Name
+  MutationDeleteCustomerResolver:
+    Type: "AWS::AppSync::Resolver"
+    Properties:
+      ApiId: 
+        Fn::ImportValue:
+          FinalYearProjectAPIId
+      TypeName: "Mutation"
+      FieldName: "deleteCustomer"
+      DataSourceName: !GetAtt CustomersDataSource.Name
+  
+
+Outputs:
+  CustomersResolverLamdba:
+    Description: A reference to naasfyp UserPoolClient
+    Value: !GetAtt CustomersResolverLamdba.Arn
+    Export:
+      Name: CustomersResolverLamdbaArn
+
+  CustomersResolverLamdba:
+    Description: A reference to naasfyp UserPoolClient
+    Value: !Ref CustomersResolverLamdba
+    Export:
+      Name: CustomersResolverLamdba

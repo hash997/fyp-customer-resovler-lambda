@@ -1,13 +1,41 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: Customer Resolver For GraphQL
+Description: Customers Resolver For GraphQL
 Resources:
-  CustomerResolverLamdba:
+  AppsyncCustomersResolversLambdaServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - appsync.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: /
+  CustomersResolversLambdaAccessPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: DirectAppSyncLambda
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action: lambda:invokeFunction
+          Resource:
+          - Fn::GetAtt:
+            - CustomersResolverLamdba
+            - Arn
+      Roles:
+      - Ref: AppsyncCustomersResolversLambdaServiceRole
+  CustomersResolverLamdba:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: CustomerResolver
+      Handler: CustomersResolver
       Runtime: go1.x
-      CodeUri: CustomerResolverLamdba
+      CodeUri: CustomersResolverLamdba
       VpcConfig:
         SecurityGroupIds:
         - sg-081b3e2c080c7010f
@@ -25,3 +53,72 @@ Resources:
       Environment:
         Variables:
           END_POINT: database-1.cdqfiq1lbrhl.ap-southeast-1.rds.amazonaws.com
+  CustomersDataSource:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      ApiId:
+        Fn::ImportValue: FinalYearProjectAPIId
+      Description: Responsible for resolving all mutations and subscribtions with
+        return type customers interfaec and types that implement User interface
+      Name: CustomersDataSource
+      Type: AWS_LAMBDA
+      ServiceRoleArn:
+        Fn::GetAtt:
+        - AppsyncCustomersResolversLambdaServiceRole
+        - Arn
+      LambdaConfig:
+        LambdaFunctionArn:
+          Fn::GetAtt:
+          - CustomersResolverLamdba
+          - Arn
+  QueryCustomerByIdResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId:
+        Fn::ImportValue: FinalYearProjectAPIId
+      TypeName: Query
+      FieldName: customerById
+      DataSourceName:
+        Fn::GetAtt:
+        - CustomersDataSource
+        - Name
+  MutationCreateCustomerResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId:
+        Fn::ImportValue: FinalYearProjectAPIId
+      TypeName: Mutation
+      FieldName: createCustomer
+      DataSourceName:
+        Fn::GetAtt:
+        - CustomersDataSource
+        - Name
+  MutationUpdateCustomerResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId:
+        Fn::ImportValue: FinalYearProjectAPIId
+      TypeName: Mutation
+      FieldName: updateCustomer
+      DataSourceName:
+        Fn::GetAtt:
+        - CustomersDataSource
+        - Name
+  MutationDeleteCustomerResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId:
+        Fn::ImportValue: FinalYearProjectAPIId
+      TypeName: Mutation
+      FieldName: deleteCustomer
+      DataSourceName:
+        Fn::GetAtt:
+        - CustomersDataSource
+        - Name
+Outputs:
+  CustomersResolverLamdba:
+    Description: A reference to naasfyp UserPoolClient
+    Value:
+      Ref: CustomersResolverLamdba
+    Export:
+      Name: CustomersResolverLamdba
