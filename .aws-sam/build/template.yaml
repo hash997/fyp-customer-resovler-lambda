@@ -53,6 +53,8 @@ Resources:
       Environment:
         Variables:
           END_POINT: database-1.cdqfiq1lbrhl.ap-southeast-1.rds.amazonaws.com
+    Metadata:
+      SamResourceId: CustomersResolverLamdba
   CustomersDataSource:
     Type: AWS::AppSync::DataSource
     Properties:

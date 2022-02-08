@@ -40,7 +40,7 @@ type JobRequest struct {
 	JobRequestLocationId  uuid.UUID
 	JobRequestSentAt      time.Time
 	JobRequestCompletedAt time.Time
-	JobRequestCity        string
+	JobRequestCity        string `gorm:"index"`
 	JobRequestStatus      string
 	JobRequestTitle       string
 	JobRequestDescription string
@@ -48,6 +48,7 @@ type JobRequest struct {
 	JobRequestOffers      []Offer  `gorm:"foreignKey:OfferJobRequestId"`
 	Customer              Customer `gorm:"foreignKey:JobRequestCustomerId"`
 	JobRequestLocation    Location `gorm:"foreignKey:JobRequestLocationId"`
+	JobRequestSpeciality  string   `gorm:"index"`
 }
 
 type Offer struct {

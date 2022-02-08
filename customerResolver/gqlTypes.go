@@ -4,15 +4,18 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"time"
+
+	"github.com/google/uuid"
 )
 
 type GqlAppointment struct {
-	ID         string  `json:"id"`
-	CustomerID string  `json:"customerId"`
-	WorkerID   string  `json:"workerId"`
-	OfferID    string  `json:"offerId"`
-	Time       string  `json:"time"`
-	Status     *string `json:"status"`
+	ID         uuid.UUID            `json:"id"`
+	CustomerID uuid.UUID            `json:"customerId"`
+	WorkerID   uuid.UUID            `json:"workerId"`
+	OfferID    uuid.UUID            `json:"offerId"`
+	Time       time.Time            `json:"time"`
+	Status     GqlAppointmentStatus `json:"status"`
 }
 
 type GqlCreateCustomerInput struct {
@@ -66,20 +69,22 @@ type GqlCustomer struct {
 	PostalZipCode *string           `json:"postalZipCode"`
 	JobRequests   []*GqlJobRequest  `json:"jobRequests"`
 	Appointments  []*GqlAppointment `json:"appointments"`
+	Offers        []*GqlOffer       `json:"offers"`
 }
 
 type GqlJobRequest struct {
-	ID          string       `json:"id"`
-	CustomerID  string       `json:"customerId"`
-	Location    *GqlLocation `json:"location"`
-	City        string       `json:"city"`
-	Status      GqlJobStatus `json:"status"`
-	Title       string       `json:"title"`
-	Description string       `json:"description"`
-	TotalCost   float64      `json:"totalCost"`
-	Offers      []*GqlOffer  `json:"offers"`
-	SentAt      string       `json:"sentAt"`
-	CompletedAt *string      `json:"completedAt"`
+	ID          string              `json:"id"`
+	CustomerID  string              `json:"customerId"`
+	Location    *GqlLocation        `json:"location"`
+	City        string              `json:"city"`
+	Status      GqlJobStatus        `json:"status"`
+	Title       string              `json:"title"`
+	Description string              `json:"description"`
+	TotalCost   float64             `json:"totalCost"`
+	Offers      []*GqlOffer         `json:"offers"`
+	SentAt      time.Time           `json:"sentAt"`
+	CompletedAt *time.Time          `json:"completedAt"`
+	Speciality  GqlWorkerSpeciality `json:"speciality"`
 }
 
 type GqlLocation struct {
@@ -98,7 +103,7 @@ type GqlOffer struct {
 	WorkerID   string         `json:"workerId"`
 	JobID      string         `json:"jobId"`
 	Price      float64        `json:"price"`
-	SentAt     string         `json:"sentAt"`
+	SentAt     time.Time      `json:"sentAt"`
 	Status     GqlOfferStatus `json:"status"`
 }
 

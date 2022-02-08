@@ -245,9 +245,75 @@ func main() {
 // ====================== helpers ======================
 func ConvertDBCustomerToGqlCustomer(dbCstmr Customer) (GqlCustomer, error) {
 
-	// gqlAddrs := GqlLocation{
+	dbOfrs := []Offer{}
+	dbJbRqsts := []JobRequest{}
+	dbApts := []Appointment{}
+	gqlOfrs := []*GqlOffer{}
+	gqlApts := []*GqlAppointment{}
+	gqlJbRqsts := []*GqlJobRequest{}
+	gqlWrkr := GqlCustomer{}
 
-	// }
+	err := DB.Find(&dbOfrs).Where("offer_customer_id = ?", dbCstmr.CustomerID).Error
+	if err != nil {
+		return gqlWrkr, err
+	}
+
+	for _, dbOfr := range dbOfrs {
+
+		gqlOfr := GqlOffer{
+			ID:         dbOfr.OfferId.String(),
+			WorkerID:   dbOfr.OfferWorkerId.String(),
+			CustomerID: dbOfr.OfferCustomerId.String(),
+			Price:      dbOfr.OfferPrice,
+			SentAt:     dbOfr.OfferSentAt,
+			Status:     GqlOfferStatus(dbOfr.OfferStatus),
+		}
+
+		gqlOfrs = append(gqlOfrs, &gqlOfr)
+
+	}
+
+	err = DB.Find(&dbApts).Where("appointment_customer_id = ?", dbCstmr.CustomerID).Error
+	if err != nil {
+		return gqlWrkr, err
+	}
+
+	for _, dbApt := range dbApts {
+
+		gqlApt := GqlAppointment{
+			ID:         dbApt.AppointmentId,
+			CustomerID: dbApt.AppointmentCustomerId,
+			WorkerID:   dbApt.AppointmentWorkerId,
+			OfferID:    dbApt.AppointmentOfferId,
+			Time:       dbApt.AppointmentTime,
+			Status:     GqlAppointmentStatus(dbApt.AppointmentStatus),
+		}
+		gqlApts = append(gqlApts, &gqlApt)
+
+	}
+
+	err = DB.Find(&dbJbRqsts).Where("job_request_customer_id = ?", dbCstmr.CustomerID).Error
+	if err != nil {
+		return gqlWrkr, err
+	}
+
+	for _, dbJbRqst := range dbJbRqsts {
+
+		gqlJbRqst := GqlJobRequest{
+			ID:          dbJbRqst.JobRequestId.String(),
+			CustomerID:  dbJbRqst.JobRequestCustomerId.String(),
+			City:        dbJbRqst.JobRequestCity,
+			Status:      GqlJobStatus(dbJbRqst.JobRequestStatus),
+			Title:       dbJbRqst.JobRequestTitle,
+			Description: dbJbRqst.JobRequestDescription,
+			TotalCost:   dbJbRqst.JobRequestTotalCost,
+			SentAt:      dbJbRqst.JobRequestSentAt,
+			CompletedAt: &dbJbRqst.JobRequestCompletedAt,
+			Speciality:  GqlWorkerSpeciality(dbJbRqst.JobRequestSpeciality),
+		}
+		gqlJbRqsts = append(gqlJbRqsts, &gqlJbRqst)
+
+	}
 
 	gqlCstmr := GqlCustomer{
 		ID:            dbCstmr.CustomerID.String(),
@@ -256,9 +322,9 @@ func ConvertDBCustomerToGqlCustomer(dbCstmr Customer) (GqlCustomer, error) {
 		Email:         dbCstmr.CustomerEmail,
 		PhoneNo:       string(dbCstmr.CustomerPhoneNumber),
 		PostalZipCode: &dbCstmr.CustomerPostalCode,
-		// Appointments: ,
-		// JobRequests: ,
-
+		Appointments:  gqlApts,
+		Offers:        gqlOfrs,
+		JobRequests:   gqlJbRqsts,
 	}
 
 	fmt.Println("ConvertDBCustomerToGqlCustomer end", gqlCstmr)
