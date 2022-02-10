@@ -267,6 +267,7 @@ func ConvertDBCustomerToGqlCustomer(dbCstmr Customer) (GqlCustomer, error) {
 			Price:      dbOfr.OfferPrice,
 			SentAt:     dbOfr.OfferSentAt,
 			Status:     GqlOfferStatus(dbOfr.OfferStatus),
+			SuggestedTime: dbOfr.OffersuggestedTime,
 		}
 
 		gqlOfrs = append(gqlOfrs, &gqlOfr)

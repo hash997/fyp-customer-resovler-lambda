@@ -105,6 +105,7 @@ type GqlOffer struct {
 	Price      float64        `json:"price"`
 	SentAt     time.Time      `json:"sentAt"`
 	Status     GqlOfferStatus `json:"status"`
+	SuggestedTime time.Time `json:"suggestedTime"`
 }
 
 type GqlPost struct {

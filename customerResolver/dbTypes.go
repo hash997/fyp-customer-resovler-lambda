@@ -59,6 +59,8 @@ type Offer struct {
 	OfferPrice        float64
 	OfferSentAt       time.Time
 	OfferStatus       string
+	OffersuggestedTime time.Time 
+
 }
 
 type Appointment struct {
