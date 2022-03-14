@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/google/uuid"
@@ -186,8 +187,17 @@ func (c *CustomerHandler) CustomerQueryHandler(req *Request) (GqlCustomer, error
 		return gqlCstmr, err
 	}
 
+	fmt.Println("my customerId", args.CustomerId)
+
 	err = DB.First(&dbCstmr, "customer_id = ?", args.CustomerId).Error
 	if err != nil {
+		return gqlCstmr, err
+	}
+
+	fmt.Println("below is the dbCstmr")
+	err = json.NewEncoder(os.Stdout).Encode(dbCstmr)
+	if err != nil {
+		fmt.Println("something went wrong while printing the dbCstmr")
 		return gqlCstmr, err
 	}
 
@@ -253,10 +263,12 @@ func ConvertDBCustomerToGqlCustomer(dbCstmr Customer) (GqlCustomer, error) {
 	gqlJbRqsts := []*GqlJobRequest{}
 	gqlWrkr := GqlCustomer{}
 
-	err := DB.Find(&dbOfrs).Where("offer_customer_id = ?", dbCstmr.CustomerID).Error
+	err := DB.Where("offer_customer_id = ?", dbCstmr.CustomerID).Find(&dbOfrs).Error
 	if err != nil {
 		return gqlWrkr, err
 	}
+
+
 
 	for _, dbOfr := range dbOfrs {
 
@@ -274,7 +286,7 @@ func ConvertDBCustomerToGqlCustomer(dbCstmr Customer) (GqlCustomer, error) {
 
 	}
 
-	err = DB.Find(&dbApts).Where("appointment_customer_id = ?", dbCstmr.CustomerID).Error
+	err = DB.Where("appointment_customer_id = ?", dbCstmr.CustomerID).Find(&dbApts).Error
 	if err != nil {
 		return gqlWrkr, err
 	}
@@ -293,7 +305,7 @@ func ConvertDBCustomerToGqlCustomer(dbCstmr Customer) (GqlCustomer, error) {
 
 	}
 
-	err = DB.Find(&dbJbRqsts).Where("job_request_customer_id = ?", dbCstmr.CustomerID).Error
+	err = DB.Where("job_request_customer_id = ?", dbCstmr.CustomerID).Find(&dbJbRqsts).Error
 	if err != nil {
 		return gqlWrkr, err
 	}
